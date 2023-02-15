@@ -1,0 +1,35 @@
+---
+- name: enable and persist ip forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    state: present
+    sysctl_set: yes
+    reload: yes
+    
+- name: "allow Wireguard on the input chain"
+  iptables:
+    chain: INPUT
+    protocol: udp
+    destination_port: '51820'
+    jump: ACCEPT
+
+- name: save iptables
+  community.general.iptables_state:
+    state: saved
+    path: /etc/sysconfig/iptables
+
+- name: server configuration
+  template:
+    src: server_conf.j2
+    dest: /etc/wireguard/wg0.conf
+    owner: root
+    group: root
+    mode: '0640'
+  notify: reload wireguard config
+
+- name: start wireguard server and enable on boot
+  systemd:
+    name: wg-quick@wg0
+    enabled: yes
+    state: started

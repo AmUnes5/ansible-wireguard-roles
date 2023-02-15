@@ -1,0 +1,4 @@
+---
+wireguard_mask_bits: 24
+wireguard_peer_mask: 32
+wireguard_port: 51820

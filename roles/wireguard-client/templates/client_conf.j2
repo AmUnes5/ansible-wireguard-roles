@@ -1,0 +1,11 @@
+[Interface]
+Address = {{ wireguard_ip }}/{{ wireguard_mask_bits }}
+PrivateKey = {{ wireguard_privatekey.stdout }}
+PostUp = ip rule add from {{ net_info.address }}/{{ net_info.cidr | ipaddr('prefix') }} table main
+PreDown = ip rule del from {{ net_info.address }}/{{ net_info.cidr | ipaddr('prefix') }} table main
+
+[Peer]
+PublicKey = {{ hostvars['wg_server'].wireguard_publickey.stdout }}
+Endpoint = {{ hostvars['wg_server'].ansible_host }}:{{ wireguard_port }}
+AllowedIps = 0.0.0.0/0
+PersistentKeepalive = 25

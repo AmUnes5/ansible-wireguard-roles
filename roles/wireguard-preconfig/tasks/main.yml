@@ -1,0 +1,63 @@
+---
+- name: update packages
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: upgrade packages
+  apt:
+    upgrade: dist
+    force_apt_get: yes
+
+- name: "allow SSH on the input chain"
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: '22'
+    jump: ACCEPT
+
+- name: save iptables
+  community.general.iptables_state:
+    state: saved
+    path: /etc/sysconfig/iptables
+
+- name: install wireguard
+  apt:
+    name: wireguard
+    state: present
+
+- name: generate wireguard keypair
+  shell: wg genkey | tee /etc/wireguard/privatekey | wg pubkey | tee /etc/wireguard/publickey
+  args:
+    executable: /bin/bash
+    creates: /etc/wireguard/privatekey
+
+- name: register private key
+  command: cat /etc/wireguard/privatekey
+  register: wireguard_privatekey
+  changed_when: false
+
+- name: register public key
+  command: cat /etc/wireguard/publickey
+  register: wireguard_publickey
+  changed_when: false
+
+- name: register default interface information
+  copy:
+    dest: "/etc/wireguard/default_interface.yaml"
+    content: |
+      address: {{ ansible_default_ipv4.address }}
+      cidr: {{ ansible_default_ipv4.address }}/{{ ansible_default_ipv4.netmask }}
+      interface: {{ ansible_default_ipv4.interface }}
+    mode: '0644'
+    owner: root
+    group: root
+    force: no
+
+- name: load default network information
+  command: "cat /etc/wireguard/default_interface.yaml"
+  register: default_interface
+
+- name: set fact default network information
+  set_fact:
+    net_info: "{{ default_interface.stdout | from_yaml }}"

@@ -1,0 +1,21 @@
+---
+- name: wireguard preconfig
+  hosts: all
+  become: true
+
+  roles:
+    - role: wireguard-preconfig
+
+- name: wireguard server config
+  hosts: wg_server
+  become: true
+
+  roles:
+    - role: wireguard-server
+
+- name: wireguard client config
+  hosts: clients
+  become: true
+
+  roles:
+    - role: wireguard-client

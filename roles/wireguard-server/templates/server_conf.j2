@@ -1,0 +1,15 @@
+[Interface]
+Address = {{ wireguard_ip }}/{{ wireguard_mask_bits }}
+PrivateKey = {{ wireguard_privatekey.stdout }}
+PostUp = ip rule add from {{ net_info.address }}/{{ net_info.cidr | ipaddr('prefix') }} table main
+PreDown = ip rule del from {{ net_info.address }}/{{ net_info.cidr | ipaddr('prefix') }} table main
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o {{ net_info.interface }} -j MASQUERADE;
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o {{ net_info.interface }} -j MASQUERADE;
+ListenPort = {{ wireguard_port }}
+SaveConfig = true
+
+{% for hostname in groups['clients'] %}
+[Peer]
+PublicKey = {{ hostvars[hostname].wireguard_publickey.stdout }}
+AllowedIps = {{ hostvars[hostname].wireguard_ip }}
+{% endfor %}

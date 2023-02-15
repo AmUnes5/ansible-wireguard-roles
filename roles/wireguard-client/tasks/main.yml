@@ -1,0 +1,13 @@
+---
+- name: client configuration
+  template:
+    src: client_conf.j2
+    dest: /etc/wireguard/wg0.conf
+    owner: root
+    group: root
+    mode: '0640'
+
+- name: start wireguard server
+  systemd:
+    name: wg-quick@wg0
+    state: started
